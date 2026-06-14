@@ -1,0 +1,40 @@
+# Python
+__pycache__
+*.py[cod]
+*.egg-info
+.eggs
+dist
+build
+
+# Virtual env
+.venv
+venv
+
+# Tests
+tests/
+.pytest_cache
+htmlcov
+.coverage
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# IDE
+.idea
+.vscode
+
+# Environment (will be set via docker-compose)
+.env
+.env.local
+
+# SQLite test DB
+test_db.sqlite
+*.sqlite
+
+# Node (frontend)
+node_modules

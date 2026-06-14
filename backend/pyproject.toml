@@ -1,0 +1,21 @@
+[project]
+name = "ai-drug-screening-platform"
+version = "1.0.0"
+description = "基于 Agent 的自动化高通量药物虚拟筛选平台"
+requires-python = ">=3.11"
+authors = [
+    {name = "AI Drug Screening Team"}
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N"]
+ignore = ["E501"]

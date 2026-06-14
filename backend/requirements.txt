@@ -1,0 +1,60 @@
+# ── Web 框架 ──
+fastapi>=0.109.0,<1.0.0
+uvicorn[standard]>=0.25.0
+python-multipart>=0.0.6
+
+# ── 数据库 ──
+sqlalchemy[asyncio]>=2.0.25
+aiomysql>=0.2.0
+pymysql>=1.1.0
+alembic>=1.13.0
+
+# ── Redis ──
+redis[hiredis]>=5.0.0
+
+# ── Milvus ──
+pymilvus>=2.3.0
+
+# ── MinIO ──
+minio>=7.2.0
+
+# ── 认证 ──
+python-jose[cryptography]>=3.3.0
+bcrypt>=4.1.0
+passlib>=1.7.4
+
+# ── 配置 ──
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# ── LangGraph ──
+langgraph>=0.0.40
+langchain>=0.1.0
+langchain-openai>=0.0.5
+
+# ── 化学信息学 ──
+rdkit>=2023.9.0
+meeko>=0.4.0
+
+# ── 蛋白-配体相互作用 ──
+plip>=2.3.0
+
+# ── LLM ──
+openai>=1.6.0
+httpx>=0.25.0
+
+# ── 日志 ──
+structlog>=24.1.0
+
+# ── 报告生成 ──
+markdown>=3.5.0
+weasyprint>=60.0
+xhtml2pdf>=0.2.13
+
+# ── 工具 ──
+python-dotenv>=1.0.0
+
+# ── 测试 ──
+pytest>=7.4.0
+pytest-asyncio>=0.23.0
+httpx>=0.25.0

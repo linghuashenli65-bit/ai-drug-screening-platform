@@ -1,0 +1,48 @@
+# ─── 环境和密钥 ───
+.env
+.env.*
+!.env.example
+
+# ─── Python ───
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.sqlite
+*.db
+
+# ─── Node.js ───
+node_modules/
+frontend/dist/
+frontend/node_modules/
+*.tsbuildinfo
+
+# ─── Docker ───
+*.log
+
+# ─── IDE ───
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ─── CodeGraph (本地索引) ───
+.codegraph/
+
+# ─── 临时文件 ───
+tmp/
+temp/
+*.tmp
+backend/file/
+backend/test_db.sqlite
