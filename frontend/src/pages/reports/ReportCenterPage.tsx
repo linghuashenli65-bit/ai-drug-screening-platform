@@ -35,7 +35,7 @@ const ReportCenterPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState('');
+  const [previewHtml, setPreviewHtml] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
 
   const fetchJobs = useCallback(async () => {
@@ -55,20 +55,27 @@ const ReportCenterPage: React.FC = () => {
     fetchJobs();
   }, [fetchJobs]);
 
-  const handlePreview = (jobId: number) => {
-    const url = reportService.getReportPreviewUrl(String(jobId));
-    setPreviewUrl(url);
+  const handlePreview = async (jobId: number) => {
     setPreviewVisible(true);
     setPreviewLoading(true);
+    setPreviewHtml('');
+    try {
+      const res = await reportService.getReportPreview(String(jobId));
+      setPreviewHtml(res);
+    } catch {
+      setPreviewHtml('<div style="text-align:center;padding:40px;color:#999">加载报告失败</div>');
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
-  const handleDownload = async (jobId: number, format: 'pdf' | 'markdown') => {
+  const handleDownload = async (jobId: number, format: 'html' | 'markdown') => {
     try {
       const blob = await reportService.downloadReport(String(jobId), format);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `report_${jobId}.${format === 'pdf' ? 'pdf' : 'md'}`;
+      a.download = `report_${jobId}.${format === 'html' ? 'html' : 'md'}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -126,14 +133,14 @@ const ReportCenterPage: React.FC = () => {
               预览
             </Button>
           </Tooltip>
-          <Tooltip title="下载 PDF">
+          <Tooltip title="下载 HTML 报告">
             <Button
               type="link"
               size="small"
               icon={<DownloadOutlined />}
-              onClick={() => handleDownload(record.job_id, 'pdf')}
+              onClick={() => handleDownload(record.job_id, 'html')}
             >
-              PDF
+              HTML
             </Button>
           </Tooltip>
           <Tooltip title="导出 Markdown">
@@ -178,7 +185,7 @@ const ReportCenterPage: React.FC = () => {
         )}
       </Card>
 
-      {/* PDF Preview Modal */}
+      {/* Report Preview Modal */}
       <Modal
         title="报告预览"
         open={previewVisible}
@@ -187,18 +194,18 @@ const ReportCenterPage: React.FC = () => {
         footer={null}
         styles={{ body: { height: 600, padding: 0 } }}
       >
-        {previewLoading && (
+        {previewLoading ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <LoadingState tip="加载报告中..." />
           </div>
+        ) : (
+          <iframe
+            srcDoc={previewHtml}
+            style={{ width: '100%', height: 580, border: 'none' }}
+            title="Report Preview"
+            sandbox="allow-same-origin allow-scripts"
+          />
         )}
-        <iframe
-          src={previewUrl}
-          style={{ width: '100%', height: 580, border: 'none' }}
-          title="Report Preview"
-          onLoad={() => setPreviewLoading(false)}
-          onError={() => setPreviewLoading(false)}
-        />
       </Modal>
     </div>
   );

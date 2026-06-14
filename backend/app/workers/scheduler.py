@@ -93,12 +93,13 @@ class Scheduler:
             logger.info(f"已重新分配 {len(claimed)} 个超时任务")
 
     async def _sync_job_progress(self):
-        """同步所有活跃 Job 的进度到 Redis"""
+        """同步所有活跃 Job 的进度到 Redis，并在 Docking 完成后推进状态"""
         from sqlalchemy import select, func
 
         async with AsyncSessionLocal() as session:
             from app.models.screening import ScreeningJob
             from app.models.docking import DockingTask
+            from app.core.redis import cache_top_hits
 
             result = await session.execute(
                 select(ScreeningJob).where(
@@ -127,10 +128,43 @@ class Scheduler:
                 job.total_drugs = total_count
                 job.progress = progress
 
+                # 检查 Docking 是否全部完成 → 推进状态到 COMPLETED
+                if job.status in ("CREATED", "PREPARING", "DOCKING") and total_count > 0 and finished_count >= total_count:
+                    job.status = "COMPLETED"
+                    job.progress = 100
+                    logger.info(f"Job {job.id}: Docking 全部完成 ({finished_count}/{total_count})，状态更新为 COMPLETED")
+
+                    # 缓存 Top Hits
+                    top_results = await session.execute(
+                        select(DockingTask).where(
+                            DockingTask.job_id == job.id,
+                            DockingTask.status == "SUCCESS",
+                            DockingTask.affinity_score.isnot(None),
+                        ).order_by(DockingTask.affinity_score.asc()).limit(20)
+                    )
+                    top_tasks = top_results.scalars().all()
+                    hits = []
+                    for rank, t in enumerate(top_tasks, 1):
+                        hits.append({
+                            "rank": rank,
+                            "drug_id": t.drug_id,
+                            "drug_name": t.drug.drug_name if t.drug else f"Drug-{t.drug_id}",
+                            "affinity_score": float(t.affinity_score) if t.affinity_score is not None else None,
+                        })
+                    if hits:
+                        await cache_top_hits(job.id, hits, ttl=86400)
+
+                    # 写入后续节点的日志
+                    r = get_redis()
+                    for node_id in ["ranking", "analysis", "report"]:
+                        log_key = f"job:{job.id}:node:{node_id}:logs"
+                        await r.rpush(log_key, f"[自动完成] 任务已完成，共处理 {finished_count} 个药物")
+                        await r.expire(log_key, 86400)
+
                 # 更新 Redis
                 await cache_job_progress(job.id, {
                     "status": job.status,
-                    "progress": progress,
+                    "progress": job.progress,
                     "finished_drugs": finished_count,
                     "total_drugs": total_count,
                 })

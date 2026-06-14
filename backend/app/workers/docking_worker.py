@@ -107,6 +107,7 @@ class DockingWorker:
         drug_name = task_data.get("drug_name", "")
 
         logger.info(f"处理 Docking 任务: job={job_id}, drug={drug_id} ({drug_name})")
+        await self._push_log(job_id, f"开始对接: {drug_name} (ID={drug_id})")
 
         try:
             # 解析完整任务数据
@@ -118,6 +119,7 @@ class DockingWorker:
                 affinity = await self._simulate_docking(drug_id, task.get("smiles", ""))
                 await self._save_result(job_id, drug_id, affinity, "SUCCESS")
                 await self._update_progress(job_id)
+                await self._push_log(job_id, f"完成对接: {drug_name}, Score={affinity} kcal/mol")
                 return
 
             # ── 真实对接模式 ──
@@ -165,13 +167,16 @@ class DockingWorker:
                     affinity = parse_result.data.get("best_affinity") if parse_result.success else None
                     await self._save_result(job_id, drug_id, affinity, "SUCCESS", output_path)
                     await self._update_progress(job_id)
+                    await self._push_log(job_id, f"完成对接: {drug_name}, Score={affinity} kcal/mol")
                 else:
                     logger.warning(f"Docking 失败: {result.error}")
                     await self._save_result(job_id, drug_id, None, "FAILED")
+                    await self._push_log(job_id, f"对接失败: {drug_name}, 错误: {result.error}")
 
         except Exception as e:
             logger.error(f"处理任务异常: {e}", exc_info=True)
             await self._save_result(int(task_data.get("job_id", 0)), int(task_data.get("drug_id", 0)), None, "FAILED")
+            await self._push_log(job_id, f"任务异常: {drug_name}, {str(e)[:100]}")
 
         finally:
             # ACK 消息
@@ -240,6 +245,18 @@ class DockingWorker:
                 "finished_drugs": finished_count,
                 "total_drugs": total_count,
             })
+
+    async def _push_log(self, job_id: int, message: str):
+        """将日志条目推送到 Redis 列表"""
+        from datetime import datetime
+        try:
+            r = get_redis()
+            log_key = f"job:{job_id}:node:docking:logs"
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            await r.rpush(log_key, f"[{timestamp}] {message}")
+            await r.expire(log_key, 86400)
+        except Exception:
+            pass
 
     async def _smiles_to_pdbqt(self, smiles: str, work_dir: str) -> str | None:
         """从 SMILES 在线生成配体 PDBQT 文件

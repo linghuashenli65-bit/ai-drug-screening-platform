@@ -9,9 +9,9 @@ import {
   Row,
   Col,
   Button,
-  Input,
 } from 'antd';
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeftOutlined } from '@ant-design/icons';
 import { resultService } from '../../services/resultService';
 import type { DockingResult } from '../../types';
 import '3dmol';
@@ -19,13 +19,11 @@ import '3dmol';
 const { Title, Text } = Typography;
 
 const StructureViewPage: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const defaultJobId = searchParams.get('job') || '';
+  const { jobId = '' } = useParams<{ jobId: string }>();
+  const navigate = useNavigate();
 
   const viewerRef = useRef<HTMLDivElement>(null);
   const viewer3DRef = useRef<ReturnType<typeof window.$3Dmol.createViewer> | null>(null);
-
-  const [jobId, setJobId] = useState(defaultJobId);
   const [results, setResults] = useState<DockingResult[]>([]);
   const [selectedDrugId, setSelectedDrugId] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -34,6 +32,11 @@ const StructureViewPage: React.FC = () => {
   const [showHydrophobic, setShowHydrophobic] = useState(true);
   const [highlightSite, setHighlightSite] = useState(true);
   const [spin, setSpin] = useState(false);
+
+  // Auto-load results when jobId is available
+  useEffect(() => {
+    if (jobId) fetchResults(jobId);
+  }, [jobId]);
 
   // Create 3D viewer when viewerRef mounts
   useEffect(() => {
@@ -120,55 +123,40 @@ const StructureViewPage: React.FC = () => {
 
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 24,
-        }}
-      >
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate('/results/structure')}
+          type="text"
+          style={{ fontSize: 16 }}
+        />
         <Title level={4} style={{ margin: 0 }}>
           结构可视化
         </Title>
+        <Tag color="blue">任务 #{jobId}</Tag>
       </div>
 
-      {/* Controls */}
+      {/* Drug Selector */}
       <Card style={{ marginBottom: 16 }}>
-        <Row gutter={[16, 16]} align="middle">
-          <Col>
-            <Space>
-              <Text strong>任务:</Text>
-              <Input
-                value={jobId}
-                onChange={(e) => setJobId(e.target.value)}
-                placeholder="Job ID"
-                style={{ width: 160 }}
-              />
-              <Button onClick={() => fetchResults(jobId)}>加载</Button>
-            </Space>
-          </Col>
-          <Col>
-            <Space>
-              <Text strong>药物:</Text>
-              <Select
-                value={selectedDrugId}
-                onChange={handleDrugSelect}
-                placeholder="选择药物查看结合模式"
-                style={{ width: 260 }}
-                showSearch
-                optionFilterProp="children"
-                loading={loading}
-              >
-                {results.map((r) => (
-                  <Select.Option key={r.id} value={r.id}>
-                    {r.drug_name} (Score: {r.docking_score.toFixed(1)})
-                  </Select.Option>
-                ))}
-              </Select>
-            </Space>
-          </Col>
-        </Row>
+        <Space>
+          <Text strong>药物:</Text>
+          <Select
+            value={selectedDrugId}
+            onChange={handleDrugSelect}
+            placeholder="选择药物查看结合模式"
+            style={{ width: 320 }}
+            showSearch
+            optionFilterProp="children"
+            loading={loading}
+          >
+            {results.map((r) => (
+              <Select.Option key={r.id} value={r.id}>
+                {r.drug_name} (Score: {r.docking_score != null ? r.docking_score.toFixed(1) : '-'})
+              </Select.Option>
+            ))}
+          </Select>
+        </Space>
       </Card>
 
       <Row gutter={24}>

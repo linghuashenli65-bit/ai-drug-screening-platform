@@ -14,7 +14,7 @@ export const reportService = {
     return res.data;
   },
 
-  async downloadReport(jobId: string, format: 'pdf' | 'markdown'): Promise<Blob> {
+  async downloadReport(jobId: string, format: 'html' | 'markdown'): Promise<Blob> {
     const res = await api.get(`/reports/${jobId}/download`, {
       params: { format },
       responseType: 'blob',
@@ -22,8 +22,10 @@ export const reportService = {
     return res.data;
   },
 
-  getReportPreviewUrl(jobId: string): string {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
-    return `${baseUrl}/reports/${jobId}/preview`;
+  async getReportPreview(jobId: string): Promise<string> {
+    const res = await api.get<string>(`/reports/${jobId}/preview`, {
+      responseType: 'text' as unknown as undefined,
+    } as Record<string, unknown>);
+    return res.data as unknown as string;
   },
 };

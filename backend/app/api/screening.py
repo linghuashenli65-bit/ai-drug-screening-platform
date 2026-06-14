@@ -71,6 +71,16 @@ async def _run_workflow(job_id: int, job_name: str, project_id: int, smiles: str
         await _update_job_status("DOCKING")
         await cache_job_progress(job_id, {"status": "DOCKING", "progress": 0, "finished_drugs": 0, "total_drugs": 0})
 
+        # 写入前置节点日志
+        r = get_redis()
+        for node_id, msg in [
+            ("planner", f"[任务规划] 已创建筛选任务: {job_name}"),
+            ("prepare_ligand", f"[分子准备] SMILES 解析完成"),
+            ("load_library", f"[数据库加载] 受体: {receptor_name}, 药物库已加载"),
+        ]:
+            await r.rpush(f"job:{job_id}:node:{node_id}:logs", msg)
+            await r.expire(f"job:{job_id}:node:{node_id}:logs", 86400)
+
         initial_state = create_initial_state(
             task_id=job_id,
             job_name=job_name,

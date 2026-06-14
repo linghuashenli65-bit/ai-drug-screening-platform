@@ -13,6 +13,8 @@ import TaskListPage from './pages/tasks/TaskListPage';
 import TaskDetailPage from './pages/tasks/TaskDetailPage';
 import AgentMonitorPage from './pages/monitor/AgentMonitorPage';
 import DockingResultsPage from './pages/results/DockingResultsPage';
+import DockingResultsDetailPage from './pages/results/DockingResultsDetailPage';
+import StructureViewListPage from './pages/results/StructureViewListPage';
 import StructureViewPage from './pages/results/StructureViewPage';
 import AIAnalysisListPage from './pages/results/AIAnalysisListPage';
 import AIAnalysisDetailPage from './pages/results/AIAnalysisDetailPage';
@@ -63,7 +65,9 @@ const App: React.FC = () => {
               }
             />
             <Route path="results/docking" element={<DockingResultsPage />} />
-            <Route path="results/structure" element={<StructureViewPage />} />
+            <Route path="results/docking/:jobId" element={<DockingResultsDetailPage />} />
+            <Route path="results/structure" element={<StructureViewListPage />} />
+            <Route path="results/structure/:jobId" element={<StructureViewPage />} />
             <Route path="results/ai-analysis" element={<AIAnalysisListPage />} />
             <Route path="results/ai-analysis/:jobId" element={<AIAnalysisDetailPage />} />
             <Route path="reports" element={<ReportCenterPage />} />
